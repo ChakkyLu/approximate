@@ -1,3 +1,5 @@
 ABC command line: " read forsat.blif; resyn2; sat; ".
 
-UNSATISFIABLE  Time =  2178.35 sec
+Warning: Constant-0 drivers added to 10 non-driven nets in network "subtractor":
+k00, k01, k02, k03 ...
+UNSATISFIABLE  Time =     0.72 sec

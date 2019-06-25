@@ -1,3 +1,5 @@
-ABC command line: " read for16c.blif; sat; ".
+ABC command line: " read /home/rikuki/project/approximate/heuristic/sat/for16c.blif; sat; ".
 
-SATISFIABLE    Time =     0.08 sec
+Warning: Constant-0 drivers added to 10 non-driven nets in network "subtractor":
+k00, k01, k02, k03 ...
+SATISFIABLE    Time =     0.10 sec
