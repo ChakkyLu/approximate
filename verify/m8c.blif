@@ -1,0 +1,213 @@
+# Benchmark "multi8" written by ABC on Thu Jun 13 19:09:57 2019
+.model multi8
+.inputs a0 a1 a2 a3 b0 b1 b2 b3
+.outputs m00 m01 m02 m03 m04 m05 m06 m07
+.names a0 b0 m00
+11 1
+.names a1 b0 n18
+11 1
+.names a0 b1 n19
+11 1
+.names n18 n19 n20
+10 1
+.names n18 n19 n21
+01 1
+.names n20 n21 m01
+00 0
+.names n18 n19 n23
+11 1
+.names a2 b0 n24
+11 1
+.names a1 b1 n25
+11 1
+.names n24 n25 n26
+10 1
+.names n24 n25 n27
+01 1
+.names n26 n27 n28
+00 1
+.names n23 n28 n29
+11 1
+.names n23 n28 n30
+00 1
+.names n29 n30 n31
+00 1
+.names a0 b2 n32
+11 1
+.names n31 n32 n33
+00 1
+.names n31 n32 n34
+11 1
+.names n33 n34 m02
+00 0
+.names n31 n32 n36
+01 1
+.names n24 n25 n37
+11 1
+.names n23 n28 n38
+10 1
+.names n37 n38 n39
+00 1
+.names a3 b0 n40
+11 1
+.names a2 b1 n41
+11 1
+.names n40 n41 n42
+10 1
+.names n40 n41 n43
+01 1
+.names n42 n43 n44
+00 1
+.names n39 n44 n45
+10 1
+.names n39 n44 n46
+01 1
+.names n45 n46 n47
+00 1
+.names a1 b2 n48
+11 1
+.names n47 n48 n49
+00 1
+.names n47 n48 n50
+11 1
+.names n49 n50 n51
+00 1
+.names n36 n51 n52
+11 1
+.names n36 n51 n53
+00 1
+.names n52 n53 n54
+00 1
+.names a0 b3 n55
+11 1
+.names n54 n55 n56
+00 1
+.names n54 n55 n57
+11 1
+.names n56 n57 m03
+00 0
+.names n54 n55 n59
+01 1
+.names n47 n48 n60
+01 1
+.names n36 n51 n61
+10 1
+.names n60 n61 n62
+00 1
+.names n40 n41 n63
+11 1
+.names n39 n44 n64
+00 1
+.names n63 n64 n65
+00 1
+.names a3 b1 n66
+11 1
+.names n65 n66 n67
+11 1
+.names n65 n66 n68
+00 1
+.names n67 n68 n69
+00 1
+.names a2 b2 n70
+11 1
+.names n69 n70 n71
+00 1
+.names n69 n70 n72
+11 1
+.names n71 n72 n73
+00 1
+.names n62 n73 n74
+10 1
+.names n62 n73 n75
+01 1
+.names n74 n75 n76
+00 1
+.names a1 b3 n77
+11 1
+.names n76 n77 n78
+00 1
+.names n76 n77 n79
+11 1
+.names n78 n79 n80
+00 1
+.names n59 n80 n81
+11 1
+.names n59 n80 n82
+00 1
+.names n81 n82 m04
+00 0
+.names n76 n77 n84
+01 1
+.names n59 n80 n85
+10 1
+.names n84 n85 n86
+00 1
+.names n69 n70 n87
+01 1
+.names n62 n73 n88
+00 1
+.names n87 n88 n89
+00 1
+.names n65 n66 n90
+01 1
+.names a3 b2 n91
+11 1
+.names n90 n91 n92
+10 1
+.names n90 n91 n93
+01 1
+.names n92 n93 n94
+00 1
+.names n89 n94 n95
+10 1
+.names n89 n94 n96
+01 1
+.names n95 n96 n97
+00 1
+.names a2 b3 n98
+11 1
+.names n97 n98 n99
+00 1
+.names n97 n98 n100
+11 1
+.names n99 n100 n101
+00 1
+.names n86 n101 n102
+10 1
+.names n86 n101 n103
+01 1
+.names n102 n103 m05
+00 0
+.names n97 n98 n105
+01 1
+.names n86 n101 n106
+00 1
+.names n105 n106 n107
+00 1
+.names n90 n91 n108
+11 1
+.names n89 n94 n109
+00 1
+.names n108 n109 n110
+00 1
+.names a3 b3 n111
+11 1
+.names n110 n111 n112
+00 1
+.names n110 n111 n113
+11 1
+.names n112 n113 n114
+00 1
+.names n107 n114 n115
+10 1
+.names n107 n114 n116
+01 1
+.names n115 n116 m06
+00 0
+.names n110 n111 n118
+01 1
+.names n107 n114 n119
+00 1
+.names n118 n119 m07
+00 0
+.end
