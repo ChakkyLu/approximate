@@ -9,12 +9,48 @@ def kd(i):
             return '0'+str(i)
         return str(i)
 
+def buma(size):
+    newstr = ""
+    start_c = "k"
+    dict = {'in':'z10', 'carry':"c10", 'real': "l"}
+
+    for i in range(size):
+        newstr += ".names " + start_c + kd(i) + " " + dict["in"]+kd(i)+"\n" + "1 0\n"
+
+    newstr += ".names " + dict["in"]+kd(0) +" " + dict["carry"]+kd(0)+"\n1 1\n"
+    newstr += ".names " + dict["in"]+kd(0) +" " + dict["real"]+kd(0)+"\n1 0\n"
+
+    for i in range(1,size):
+        newstr += ".names " + dict["in"]+kd(i)+" " +  dict["carry"]+kd(i-1) + " " + dict["real"]+kd(i)+ "\n10 1\n01 1\n"
+        newstr += ".names " + dict["in"]+kd(i)+" " +  dict["carry"]+kd(i-1) + " " + dict["carry"]+kd(i)+ "\n11 1\n"
+
+    newstr += ".names " + "l" + " l".join([kd(i) for i in range(size)]) + " " + "l"+kd(size)+"\n" + "0"*size + " 0\n"
+    newstr += ".names " + "m" + kd(size) + "\n0\n"
+
+    return newstr
+
+def absolute(size):
+    newstr = ""
+    start_c = "s"
+    dict = {'in':'z20', 'carry':"c20", 'real': "r"}
+
+    for i in range(size):
+        newstr += ".names " + start_c + kd(i) + " " + dict["in"]+kd(i)+"\n" + "1 0\n"
+
+    newstr += ".names " + dict["in"]+kd(0) +" " + dict["carry"]+kd(0)+"\n1 1\n"
+    newstr += ".names " + dict["in"]+kd(0) +" " + dict["real"]+kd(0)+"\n1 0\n"
+
+    for i in range(1,size):
+        newstr += ".names " + dict["in"]+kd(i)+" " +  dict["carry"]+kd(i-1) + " " + dict["real"]+kd(i)+ "\n10 1\n01 1\n"
+        newstr += ".names " + dict["in"]+kd(i)+" " +  dict["carry"]+kd(i-1) + " " + dict["carry"]+kd(i)+ "\n11 1\n"
+    return newstr
+
+
+
 def main():
     fw = open("buma.txt", 'w')
     size = 16
     newstr = ""
-
-
 
     def p1(newstr):
         start_c = "k"
@@ -38,7 +74,7 @@ def main():
         newstr += "".join(fr.readlines())
         return newstr
 
-    def p3(newstr):
+    def p3(size):
         start_c = "s"
         dict = {'in':'z20', 'carry':"c20", 'real': "r"}
 
@@ -69,6 +105,17 @@ def p5(pos, size, newstr):
     newstr += ".names " + "r" + " r".join([kd(i) for i in range(pos,size)]) +" " + "h01"+"\n" + "0"*a+" 0\n"
     newstr += ".names h00 h01 "+"s"+kd(size)+" out\n" + "1-0 1\n-11 1\n"
     return newstr
+
+def gen_pattern(pp, size):
+    l = size - len(pp)
+    newstr = ".names " + "s" + " s".join([kd(i) for i in range(size-1,l-1,-1)]) +" " + "h00"+"\n" + pp + " 1 \n"
+    newstr += ".names " + "r" + " r".join([kd(i) for i in range(size-1, l-1, -1)]) +" " + "h01"+"\n" + pp + " 1 \n"
+    newstr += ".names h00 h01 "+"s"+kd(size)+" out\n" + "1-0 1\n-11 1\n"
+    return newstr
+
+
+
+
 
 
 if __name__ == "__main__":

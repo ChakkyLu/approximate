@@ -128,6 +128,31 @@ class Circuit:
 
         return content
 
+    # def getStrOfCir(self):
+    #     content = []
+    #
+    #     for node in self.nodes:
+    #         newStr = ""
+    #         if len(node.inputs) == 2:
+    #             i1 = node.inputs[0].name.replace("m","k").replace("n","j")
+    #             i2 = node.inputs[1].name.replace("m","k").replace("n","j")
+    #             o1 = node.name.replace("m","k").replace("n","j")
+    #             newStr += '.names ' + i1 + ' ' + i2 + ' ' + o1
+    #         if len(node.inputs) == 1:
+    #             i1 = node.inputs[0].name.replace("m","k").replace("n","j")
+    #             o1 = node.name.replace("m","k").replace("n","j")
+    #             newStr += '.names ' + i1 + ' ' + o1
+    #         if len(node.inputs) == 0:
+    #             o1 = node.name.replace("m","k").replace("n","j")
+    #             newStr += '.names ' + o1
+    #
+    #         newStr += "\n"
+    #         newStr += node.returnType()
+    #         newStr += "\n"
+    #         content.append(newStr)
+    #
+    #     return content
+
     def InNodes(self, name):
         for node in self.nodes:
             if node.name == name:
@@ -589,7 +614,6 @@ class Circuit:
                 self.poInfo[key] = min([int(v[1:]) for v in self.nodesDict[key]])
             else:
                 self.poInfo[key] = int(key[1:])
-
 
     def GetSpecDict(self,prev,cur):
         if prev == "AND":

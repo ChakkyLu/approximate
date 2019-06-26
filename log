@@ -1,0 +1,3 @@
+ABC command line: " read verify.blif; resyn2; sat; ".
+
+SATISFIABLE    Time =     0.00 sec

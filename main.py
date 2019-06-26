@@ -50,7 +50,16 @@ if __name__ == "__main__":
         if command == "booth":
             if len(sys.argv) != 3:
                 print(">>>>Please use as follows")
-                print("ecsingle spec.blif")
+                print("booth spec.blif")
             else:
                 print(">>>>Generating the approximate booth multipliers........")
                 Im.HeuForBooth(sys.argv[2])
+
+
+        if command == "verify":
+            if len(sys.argv) != 5:
+                print(">>>>Please use as follows")
+                print("verify spec.blif impl_cir target_err")
+            else:
+                print(">>>>Verifying given multipliers within given threshold........")
+                Im.verify(sys.argv[2], sys.argv[3], sys.argv[4])

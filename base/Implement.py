@@ -5,7 +5,7 @@ from collections import defaultdict
 import time
 import sys
 sys.path.append("..")
-from sat.genSAT import p5
+from sat.genSAT import p5, buma, absolute, gen_pattern
 import os
 import math
 
@@ -76,8 +76,9 @@ class Implement:
 
     def HeuForBooth(self, filename):
         print("Please input status:")
-        print(">>> 1 : generate approximate booth multipliers")
-        print(">>> 2 : generate nodemap for booth multipliers")
+        print(">>> 1 : generate nodemap for booth multipliers")
+        print(">>> 2 : generate approximate booth multipliers")
+
 
         status = int(input())
 
@@ -95,17 +96,13 @@ class Implement:
             model = "newmodel"
             newfile = "wt"+str(size)
 
-        if status == 2:
+        if status == 1:
 
             datapath = os.getcwd() + "/sub/"
             satpath = os.getcwd() + "/sat/"
 
-            s
-
             nodesMap_name = []
             nodesMap_type = []
-
-
 
             model16 = open(datapath+model+str(size)+".blif").readlines()
             sub16 = open(datapath+"sub"+str(size)+".blif").readlines()
@@ -129,10 +126,8 @@ class Implement:
                 else:
                     if node.inputs[0].name in spec_cir.inputs and node.inputs[1].name in spec_cir.inputs and  node.inputs[0].name[0] == node.inputs[1].name[0]:
                         spec_cir.nodes[i].badstatus = 1
-                        # print(node.name)
                         continue
                     if node.inputs[1].badstatus == 1 and node.inputs[0].name not in spec_cir.inputs:
-                        # print(node.name)
                         spec_cir.nodes[i].badstatus = 1
                         continue
                     err = 2 ** (spec_cir.poInfo[node.name]-len(spec_cir.outputs))
@@ -146,7 +141,7 @@ class Implement:
                     fw.write("".join(newcontent))
                     fw.write(sub16)
                     fw.close()
-                    os.system('cd sat; abc -c \" read '+fixed_file+'; sat; \" > log1')
+                    os.system('cd sat; ../abc-master/abc -c \" read '+fixed_file+'; sat; \" > log1')
                     flog = open(satpath+"log1").readlines()[-1]
                     if "UNSATISFIABLE" in flog:
                         fwrite.write(node.name+","+"0"+","+str(err)+"\n")
@@ -162,7 +157,7 @@ class Implement:
                     fw.write("".join(newcontent))
                     fw.write(sub16)
                     fw.close()
-                    os.system('cd sat; abc -c \" read '+fixed_file+'; sat; \" > log2')
+                    os.system('cd sat; ../abc-master/abc -c \" read '+fixed_file+'; sat; \" > log2')
                     flog = open(satpath+"log2").readlines()[-1]
                     if "UNSATISFIABLE" in flog:
                         fwrite.write(node.name+","+"1"+","+str(err)+"\n")
@@ -170,9 +165,11 @@ class Implement:
                     # sys.stdout.write("\rProgress: %d / %d" % (i+1, len(spec_cir.nodes)))
                     # sys.stdout.flush()
 
+            print(">>>It takes %s \'s to generate map" % str(time.time()-cur_time))
+
             fwrite.close()
 
-        if status == 1:
+        if status == 2:
             # spec_cir = Circuit()
             # spec_cir.readBlif(filename)
             # size = spec_cir.size
@@ -256,7 +253,7 @@ class Implement:
 
                         fw.close()
 
-                        os.system('cd sat; abc -c \" read forsat.blif; resyn2; sat; \" > log')
+                        os.system('cd sat; abc-master -c \" read forsat.blif; resyn2; sat; \" > log')
                         flog = open(satpath+"log").readlines()[-1]
 
                         # print(flog)
@@ -285,7 +282,7 @@ class Implement:
 
             fw.close()
 
-            os.system('cd sat; abc -c \" read forsat.blif; resyn2; sat; \" > log')
+            os.system('cd sat; abc-master -c \" read forsat.blif; resyn2; sat; \" > log')
             flog = open(satpath+"log").readlines()[-1]
 
             print(flog)
@@ -460,7 +457,6 @@ class Implement:
             # print(pattern,o1,o2)
             print("Program Cost: %s 's " % str( float(time.time() - start_time)) )
 
-
     def getApproCir(self, filename):
         cur_time = time.time()
         spec_cir = Circuit()
@@ -499,4 +495,93 @@ class Implement:
         # save_path = os.path.abspath(os.path.join(os.getcwd(), "..")) + "/approximate_circuit/" + spec_cir.model.lower()+"_ap.blif"
         print("\n"+"It takes " + str(cur_time) + " 's to generate approximate circuits")
         impl_cir.writeBlif(save_path)
-        self.DoExSimCir(spec_cir, impl_cir)
+        # self.DoExSimCir(spec_cir, impl_cir)
+
+    def verify(self, filename1, filename2, target_err):
+        spec_cir = Circuit()
+        spec_cir.readBlif(filename1)
+
+        impl_cir = Circuit()
+        impl_cir.readBlif(filename2)
+
+        target_err = float(target_err)
+
+        input_size = len(spec_cir.inputs)
+        output_size = len(spec_cir.outputs)
+
+        if len(impl_cir.inputs) != input_size or len(impl_cir.outputs) != len(spec_cir.outputs):
+            print("I/O are different!")
+            return 0
+
+        impl_str = "".join(open(filename2).readlines()[:])
+        impl_str = impl_str[impl_str.find(".names"):]
+        impl_str = impl_str.replace("n", "j").replace("james", "names").replace("ijputs", "inputs").replace(".ejd", "")
+        impl_str = impl_str.replace("m", "k").replace("nakes", "names")
+
+        spec_str = "".join(open(filename1).readlines()[:])
+        input_str = spec_str[:spec_str.find(".outputs")]
+        spec_str = spec_str[spec_str.find(".names"):].replace(".end", "")
+
+        input_str += ".outputs out\n"
+
+        fw = open("verify.blif", "w")
+
+        fw.write(input_str)
+        fw.write("#G\n"+spec_str)
+        fw.write("#C\n"+impl_str)
+
+        adder_name = "a%d.blif" % (input_size+1)
+
+        try:
+            os.system("abc-master/abc -c \"gen -a -N %d %s; strash; write %s\" " % (input_size+1, adder_name, adder_name))
+        except Exception as e:
+            print("abc-master package is required.")
+
+
+        # adder = Circuit()
+        # adder.readBlif("a%d.blif" % input_size+1)
+
+
+        adder_str = "".join(open(adder_name).readlines()[:])
+        adder_str = adder_str[adder_str.find(".names"):]
+        adder_str = adder_str.replace("a","m").replace("b", "l").replace("new_n", "q").replace("nmmes", "names").replace(".end", "").replace("_","")
+
+        fw.write("#COM\n"+buma(output_size))
+        fw.write("#SUB\n"+adder_str)
+        fw.write("#ABSOLUTE\n"+absolute(output_size))
+        # final_ver +=  buma(output_size) + adder_str + absolute(adder_str)
+
+        give_pattern = ""
+
+        for i in range(output_size):
+            tmp = 2**(-i-1)
+            if target_err >= tmp:
+                give_pattern += "1"
+                target_err -= tmp
+            else:
+                give_pattern += "0"
+            if target_err < 2 ** (-output_size):
+                break
+
+        fw.write(gen_pattern(give_pattern, output_size) + ".end\n")
+        fw.close()
+        # final_ver += gen_pattern(give_pattern, output_size) + ".end\n"
+
+        try:
+            f = open("abc-master.rc")
+        except:
+            os.system("cp abc-master/abc.rc abc-master.rc")
+
+        # os.system("/abc-master/abc -c\"gen -a %d a%d.blif\" " % (input_size+1, input_size+1))
+        os.system('abc-master/abc -c \" read verify.blif; resyn2; sat; \" > log')
+        flog = open("log").readlines()[-1]
+        print("-"*10+"SAT RESULT"+"-"*10+"\n"+flog+"-"*30)
+
+        if "UNSATISFIABLE" in flog:
+            print("The error of given circuit is !within! target error")
+            print("PASS!")
+        else:
+            print("The error of given circuit is !greater! than target error")
+            print("FAIL!")
+
+        # os.system("rm a*blif; rm *log")
