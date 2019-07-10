@@ -609,7 +609,7 @@ class Circuit:
         for node in self.nodes:
             key = node.name
             self.outputsInfo[key] = len(self.nodesDict[key])
-            # print(key)
+            # print(node.name, self.outputs)
             if not node.is_output:
                 self.poInfo[key] = min([int(v[1:]) for v in self.nodesDict[key]])
             else:

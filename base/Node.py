@@ -151,3 +151,21 @@ class Node:
         newStr += node.returnType()
         newStr += "\n"
         return newStr
+
+    def typeChange(self, type):
+        static_str = ".names "
+        if type == 0:
+            return static_str + self.name +"\n" + "0\n"
+        if type == 1:
+            return static_str + self.name +"\n" + "1\n"
+        if type == 2:
+            return static_str + self.inputs[0].name + " " + self.names +"\n" + "1 1\n"
+        if type == 3:
+            return static_str + self.inputs[1].name + " " + self.names +"\n" + "1 1\n"
+        if type == 4:
+            return static_str + self.inputs[0].name + " " + self.names +"\n" + "0 1\n"
+        if type == 5:
+            return static_str + self.inputs[1].name + " " + self.names +"\n" + "0 1\n"
+
+    def strOfGate(self):
+        return '.names ' + node.inputs[0].name + ' ' + node.inputs[1].name + ' ' + node.name + "\n" + node.returnType() + "\n"

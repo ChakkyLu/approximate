@@ -5,7 +5,7 @@ from collections import defaultdict
 import time
 import sys
 sys.path.append("..")
-from sat.genSAT import p5, buma, absolute, gen_pattern
+from sat.genSAT import for_booth, buma, absolute, gen_pattern
 import os
 import math
 
@@ -13,7 +13,6 @@ class Implement:
     def __init__(self):
         # self.maps = {}
         pass
-
     # exhaustive simulation of file1 and file2
     def DoExSim(self, filename1, filename2):
         spec_cir = Circuit()
@@ -75,52 +74,80 @@ class Implement:
             kdict[i] = "0"*1
 
     def HeuForBooth(self, filename):
-        print("Please input status:")
-        print(">>> 1 : generate nodemap for booth multipliers")
-        print(">>> 2 : generate approximate booth multipliers")
-
-
-        status = int(input())
+        # print("Please input status:")
+        # print(">>> 1 : generate nodemap for booth multipliers")
+        # print(">>> 2 : generate approximate booth multipliers")
 
         spec_cir = Circuit()
         spec_cir.readBlif(filename)
         circuit_size = len(spec_cir.inputs)
         size = spec_cir.size
 
-        type = 1
+        datapath = os.getcwd() + "/sub/"
+        satpath = os.getcwd() + "/sat/"
+        ap_path = os.getcwd() + "/approximate_circuit/"
 
-        if type == 1:
-            model = "model"
-            newfile = str(size)
+
+        base_name = filename[filename.find("/")+1:filename.find(".")] + ".csv"
+        print(base_name)
+
+
+        print("Please input target error: ")
+        target_err = float(input())
+        cur_err = 0
+
+        adder_name = "a%d.blif"%(circuit_size+1)
+
+        try:
+            fadder = open(satpath+adder_name).readlines()
+        except:
+            try:
+                os.system("cd sat; ../abc-master/abc -c \"gen -a -N %d %s; strash; write %s\" " % (circuit_size+1, adder_name, adder_name))
+                fadder = open(satpath+adder_name).readlines()
+            except Exception as e:
+                print("abc-master package is required.")
+                return 0
+
+        if "end" in fadder[-2]:
+            adder_str =  "".join(fadder)
+            adder_str = adder_str[adder_str.find(".names"):]
+            adder_str = adder_str.replace("a","m").replace("b", "l").replace("new_n", "q").replace("nmmes", "names").replace(".end", "").replace("_","")
         else:
-            model = "newmodel"
-            newfile = "wt"+str(size)
+            adder_str =  "".join(fadder)
 
-        if status == 1:
 
-            datapath = os.getcwd() + "/sub/"
-            satpath = os.getcwd() + "/sat/"
+        spec_str = "".join(open(filename).readlines()[:])
+        input_str = spec_str[:spec_str.find(".outputs")]
+        spec_str = spec_str[spec_str.find(".names"):].replace(".end", "")
 
+        input_str += ".outputs out\n"
+
+        cur_time = time.time()
+
+        def genMap():
+
+            # base_name = f
             nodesMap_name = []
             nodesMap_type = []
 
-            model16 = open(datapath+model+str(size)+".blif").readlines()
-            sub16 = open(datapath+"sub"+str(size)+".blif").readlines()
-
-            sub16 = "".join(sub16)
-            model16 = "".join(model16)
-
             content = spec_cir.getStrOfCir()
+
+            fwrite = open(datapath + "base.csv", 'w')
+
+            fixed_file = satpath + filename[filename.find("/")+1:filename.find(".")] + "base.blif"
+
+            under_m = for_booth(circuit_size, adder_str, circuit_size-1) + "\n.end"
+
+
             spec_cir.GetEachNodePriOut()
 
-            fwrite = open(datapath + newfile+"base.csv", 'w')
-
-            fixed_file = satpath + "for"+str(size)+"c.blif"
 
             for i in range(len(spec_cir.nodes)):
-                #const zero
+
+                o_node = content[i]
                 node = spec_cir.nodes[i].copy()
                 spec_cir.nodes[i].badstatus = 0
+
                 if node.name in spec_cir.outputs:
                     fwrite.write(node.name+","+str(float(2**int(node.name[1:])/(2**len(spec_cir.outputs))))+"\n")
                 else:
@@ -131,168 +158,112 @@ class Implement:
                         spec_cir.nodes[i].badstatus = 1
                         continue
                     err = 2 ** (spec_cir.poInfo[node.name]-len(spec_cir.outputs))
-                    f = 1
+
                     fw = open(fixed_file, 'w')
                     node.inputs = []
                     node.type = "ZERO"
-                    fw.write(model16)
-                    newcontent = content.copy()
-                    newcontent[i] = node.singleMSG()
-                    fw.write("".join(newcontent))
-                    fw.write(sub16)
+                    fw.write(input_str+spec_str)
+                    content[i] = node.singleMSG()
+                    fw.write("".join(content))
+                    fw.write(under_m)
                     fw.close()
+
                     os.system('cd sat; ../abc-master/abc -c \" read '+fixed_file+'; sat; \" > log1')
                     flog = open(satpath+"log1").readlines()[-1]
+
                     if "UNSATISFIABLE" in flog:
                         fwrite.write(node.name+","+"0"+","+str(err)+"\n")
                         continue
-                    #const ONE
-                    node = spec_cir.nodes[i].copy()
-                    fw = open(fixed_file, 'w')
+
                     node.inputs = []
                     node.type = "ONE"
-                    fw.write(model16)
-                    newcontent = content.copy()
-                    newcontent[i] = node.singleMSG()
-                    fw.write("".join(newcontent))
-                    fw.write(sub16)
+                    fw = open(fixed_file, 'w')
+                    content[i] = node.singleMSG()
+                    fw.write(input_str+spec_str)
+                    fw.write("".join(content))
+                    fw.write(under_m)
                     fw.close()
+
                     os.system('cd sat; ../abc-master/abc -c \" read '+fixed_file+'; sat; \" > log2')
                     flog = open(satpath+"log2").readlines()[-1]
                     if "UNSATISFIABLE" in flog:
                         fwrite.write(node.name+","+"1"+","+str(err)+"\n")
 
-                    # sys.stdout.write("\rProgress: %d / %d" % (i+1, len(spec_cir.nodes)))
-                    # sys.stdout.flush()
 
-            print(">>>It takes %s \'s to generate map" % str(time.time()-cur_time))
+                    content[i] = o_node
 
             fwrite.close()
 
-        if status == 2:
-            # spec_cir = Circuit()
-            # spec_cir.readBlif(filename)
-            # size = spec_cir.size
+            print(">>>It takes %s \'s to generate node map" % str(time.time()-cur_time))
 
-            datapath = os.getcwd() + "/sub/"
+        def getBooth(basefile):
+                fbase = open(basefile).readlines()
+                content = spec_cir.getStrOfCir()
 
-            basefile = datapath + newfile + "base.csv"
+                # origina_content = content.deepcopy()
 
-            newADD = ""
+                selected = []
+                nnwithvalue = {}
 
-            if "wt" in spec_cir.model:
-                basefile = "wt" + basefile
-                newADD += "wt"
+                nodeMap = [(fcontent.split(",")[0], fcontent.split(",")[1], float(fcontent.split(",")[2])) for fcontent in fbase]
+                nodeMap = sorted(nodeMap, key=lambda x:x[2])
 
-            ap_path = os.getcwd() + "/approximate_circuit/"
-
-            fbase = open(basefile).readlines()
+                adder_name = "a%d.blif"%(circuit_size+1)
 
 
-            content = spec_cir.getStrOfCir()
-            spec_cir.GetEachNodePriOut()
-
-            nodeMap = [(fcontent.split(",")[0], fcontent.split(",")[1], float(fcontent.split(",")[2])) for fcontent in fbase]
-            nodeMap = sorted(nodeMap, key=lambda x:x[2])
+                where = math.ceil(math.log(target_err*(2**len(spec_cir.outputs)),2))
+                under_m = for_booth(circuit_size, adder_str, where) + "\n.end"
 
 
-            print("Please input target error: ")
+                for nmap in nodeMap:
+                    nnwithvalue[nmap[0]] = nmap[2]
+                    node = spec_cir.nodeMaps[nmap[0]].copy()
+                    node_p = spec_cir.find(node.name)
+                    if (node.inputs[0].name in spec_cir.inputs) or (node.inputs[0].name in selected and node.inputs[1].name in selected):
+                        if (cur_err+nmap[2]) <= target_err:
+                            if spec_cir.nodeMaps[nmap[0]].inputs[0].name in selected:
+                                cur_err -= nnwithvalue[spec_cir.nodeMaps[nmap[0]].inputs[0].name]
+                            else:
+                                if spec_cir.nodeMaps[nmap[0]].inputs[1].name in selected:
+                                    cur_err -= nnwithvalue[spec_cir.nodeMaps[nmap[0]].inputs[1].name]
 
-            actual_target = float(input())
-            target_err = actual_target
-            cur_err = 0
-            selected = []
-            nnwithvalue = {}
-
-            model16 = open(datapath+newADD+"model"+str(size)+".blif").readlines()
-            sub16 = open(datapath+newADD+"sub"+str(size)+".blif").readlines()
-            newsub16 = open(datapath+"newsub"+str(size)+".blif").readlines()
-
-            sub16 = "".join(sub16)
-            model16 = "".join(model16)
-            newsub16 = "".join(newsub16)
-
-            where = math.ceil(math.log(actual_target*(2**len(spec_cir.outputs)),2))
-            sat_clause = p5(where,len(spec_cir.outputs), "")
-
-            cur_time = time.time()
-            content = spec_cir.getStrOfCir()
-            content = "".join(content)
-
-            satpath = os.getcwd() + "/sat/"
-
-            for nmap in nodeMap:
-                nnwithvalue[nmap[0]] = nmap[2]
-                node = spec_cir.nodeMaps[nmap[0]].copy()
-                if (node.inputs[0].name in spec_cir.inputs) or (node.inputs[0].name in selected and node.inputs[1].name in selected):
-                     # or \
-                    # (node.inputs[0].name in spec_cir.inputs and node.inputs[1].name in selected):
-                    if (cur_err+nmap[2]) <= target_err:
-                        # print(nmap[0])
-                        if spec_cir.nodeMaps[nmap[0]].inputs[0].name in selected:
-                            cur_err -= nnwithvalue[spec_cir.nodeMaps[nmap[0]].inputs[0].name]
-
-                        else:
-                            if spec_cir.nodeMaps[nmap[0]].inputs[1].name in selected:
-                                cur_err -= nnwithvalue[spec_cir.nodeMaps[nmap[0]].inputs[1].name]
-
-                        cur_err += nmap[2]
-                        spec_cir.ModifyCir(nmap[0], int(nmap[1]))
-
-                        selected.append(nmap[0])
-
-
-                        # if nmap[0] == "n1216":
-                        #     break
-                        content = spec_cir.getStrOfCir()
-                        content = "".join(content)
-
-                        fw = open(satpath+"forsat.blif", 'w')
-
-                        fw.write(model16+content+sub16)
-
-                        fw.close()
-
-                        os.system('cd sat; abc-master -c \" read forsat.blif; resyn2; sat; \" > log')
-                        flog = open(satpath+"log").readlines()[-1]
-
-                        # print(flog)
-                        if "UNSATISFIABLE" in flog:
+                            cur_err += nmap[2]
+                            content[node_p] = node.typeChange(int(nmap[1]))
+                            spec_cir.ModifyCir(nmap[0], int(nmap[1]))
                             selected.append(nmap[0])
-                            pass
-                        else:
-                            spec_cir.nodes[spec_cir.find_node(node.name)] = node.copy()
-                            print(nmap[0], int(nmap[1]), cur_err)
-                            cur_err -= nmap[2]
+
+                            fw = open(satpath+"forsat.blif", 'w')
+                            fw.write(spec_str+"".join(content)+under_m)
+                            fw.close()
+
+                            os.system('abc-master/abc -c -c \" read %s; resyn2; sat; \" > log' % (satpath+"forsat.blif"))
+                            flog = open("log").readlines()[-1]
+
+                            # print(flog)
+                            if "UNSATISFIABLE" in flog:
+                                selected.append(nmap[0])
+                                pass
+                            else:
+                                spec_cir.nodes[node_p] = node.copy()
+                                content[node_p] = node.strOfGate()
+                                cur_err -= nmap[2]
+
+
+                print(">>>It takes %s \'s to generate approximate circuits" % str(time.time()-cur_time))
+                spec_cir.writeBlif(ap_path+ + filename[filename.find("/")+1:filename.find(".")] + "ap.blif")
+        try:
+            open(datapath+base_name)
+            getBooth(datapath+base_name)
+        except:
+            print("Generating nodemap.........")
+            genMap()
+            getBooth(datapath+base_name)
 
 
 
 
-            print(">>>It takes %s \'s " % str(time.time()-cur_time))
 
-
-            # spec_cir.writeBlif(ap_path+spec_cir.model.lower()+"ap.blif");
-            content = spec_cir.getStrOfCir()
-            content = "".join(content)
-
-            satpath = os.path.abspath(os.path.join(os.getcwd(), "..")) + "/sat/"
-            fw = open(satpath+"forsat.blif", 'w')
-
-            fw.write(model16+content+newsub16+sat_clause+".end")
-
-            fw.close()
-
-            os.system('cd sat; abc-master -c \" read forsat.blif; resyn2; sat; \" > log')
-            flog = open(satpath+"log").readlines()[-1]
-
-            print(flog)
-            if "UNSATISFIABLE" in flog:
-                print("見事にpassしました、bravo!")
-            else:
-                print("残念ながら、失敗しました！まだやり直しようよ！")
-
-            spec_cir.writeBlif(spec_cir.model.lower()+"ap.blif")
-
+        print(">>>It takes %s \'s " % str(time.time()-cur_time))
     # exhaustive simulation of spec_cir and impl_cir
     def DoExSimCir(self, spec_cir, impl_cir):
         circuit_size = len(spec_cir.inputs)
@@ -324,7 +295,7 @@ class Implement:
         print("Worst Case Absolute Error is : %s " % str(WCAE))
         print("Mean Absolute Error Rate is : %s " % str(MAE))
 
-    def simplfy(self, filename1):
+    def simplify(self, filename1):
         spec_cir = Circuit()
         spec_cir.readBlif(filename1)
         spec_cir.AIGtoXOR()
@@ -458,6 +429,9 @@ class Implement:
             print("Program Cost: %s 's " % str( float(time.time() - start_time)) )
 
     def getApproCir(self, filename):
+        print("Pleas input target err")
+
+        target_err = float(input())
         cur_time = time.time()
         spec_cir = Circuit()
         spec_cir.readBlif(filename)
@@ -469,9 +443,7 @@ class Implement:
         impl_cir = spec_cir.copy()
         nodes = spec_cir.nodes
 
-        print("Pleas input target err")
 
-        target_err = float(input())
         cur_err = 0
         cur_nodes = []
         i = 0
@@ -496,7 +468,6 @@ class Implement:
         print("\n"+"It takes " + str(cur_time) + " 's to generate approximate circuits")
         impl_cir.writeBlif(save_path)
         # self.DoExSimCir(spec_cir, impl_cir)
-
     def verify(self, filename1, filename2, target_err):
         spec_cir = Circuit()
         spec_cir.readBlif(filename1)
@@ -546,6 +517,13 @@ class Implement:
         adder_str = adder_str[adder_str.find(".names"):]
         adder_str = adder_str.replace("a","m").replace("b", "l").replace("new_n", "q").replace("nmmes", "names").replace(".end", "").replace("_","")
 
+        datapath = os.getcwd() + "/sat/"
+
+        fadder = open(datapath+adder_name, "w")
+        fadder.write(adder_str)
+        fadder.close()
+
+
         fw.write("#COM\n"+buma(output_size))
         fw.write("#SUB\n"+adder_str)
         fw.write("#ABSOLUTE\n"+absolute(output_size))
@@ -568,9 +546,9 @@ class Implement:
         # final_ver += gen_pattern(give_pattern, output_size) + ".end\n"
 
         try:
-            f = open("abc-master.rc")
+            f = open("abc.rc")
         except:
-            os.system("cp abc-master/abc.rc abc-master.rc")
+            os.system("cp abc-master/abc.rc abc.rc")
 
         # os.system("/abc-master/abc -c\"gen -a %d a%d.blif\" " % (input_size+1, input_size+1))
         os.system('abc-master/abc -c \" read verify.blif; resyn2; sat; \" > log')
